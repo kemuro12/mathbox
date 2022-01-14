@@ -4,6 +4,7 @@ class App {
 	constructor(core){
 		this.core = core;
 		this.view = core.view;
+		this.isAxisDisabled = false;
 		this.domain = core.domain;
 		this.domainColors = core.domainColors;
 		this.graphs = [];
@@ -21,6 +22,34 @@ class App {
 
 	render(){
 		this.graphs.forEach(g => g.update())
+	}
+
+	toggleAxis(){
+		if(this.isAxisDisabled){
+			this.core.mathbox.select('axis').set('visible', false);
+			this.core.mathbox.select('ticks').set('visible', false);
+			this.core.mathbox.select('label').set('visible', false)
+		} else {
+		
+			var xAxis = this.view.axis( {axis: 1, width: 8, detail: 40, color:"red"} );
+			var xScale = this.view.scale( {axis: 1, divide: 10, nice:true, zero:true} );
+			var xTicks = this.view.ticks( {width: 5, size: 15, color: "red", zBias:2} );
+			var xFormat = this.view.format( {digits: 2, font:"Arial", weight: "normal", style: "normal", source: xScale} );
+			var xTicksLabel = this.view.label( {color: "red", zIndex: 0, offset:[0,-20], points: xScale, text: xFormat} );
+
+			var yAxis = this.view.axis( {axis: 3, width: 8, detail: 40, color:"green"} );
+			var yScale = this.view.scale( {axis: 3, divide: 5, nice:true, zero:false} );
+			var yTicks = this.view.ticks( {width: 5, size: 15, color: "green", zBias:2} );
+			var yFormat = this.view.format( {digits: 2, font:"Arial", weight: "normal", style: "normal", source: yScale} );
+			var yTicksLabel = this.view.label( {color: "green", zIndex: 0, offset:[0,0], points: yScale, text: yFormat} );
+			
+			var zAxis = this.view.axis( {axis: 2, width: 8, detail: 40, color:"blue"} );
+			var zScale = this.view.scale( {axis: 2, divide: 5, nice:true, zero:false} );
+			var zTicks = this.view.ticks( {width: 5, size: 15, color: "blue", zBias:2} );
+			var zFormat = this.view.format( {digits: 2, font:"Arial", weight: "normal", style: "normal", source: zScale} );
+			var zTicksLabel = this.view.label( {color: "blue", zIndex: 0, offset:[0,0], points: zScale, text: zFormat} );
+
+		}
 	}
 
 	addGraph(xF, yF, zF, uMin = 0, uMax = 6.282, vMin = 0, vMax = 6.282, isVisible = true) {
@@ -55,7 +84,7 @@ class App {
 		
 		this.graphs.push(newGraph);
 		
-		
+		if(this.graphColorStyle == undefined) this.graphColorStyle = "Синий"
 		if (this.graphColorStyle == "Синий"){		
 			this.domainColors.set("expr", function (emit, u,v, i,j, t) 
 				{ emit( 0.5, 0.5, 1.0, 1.0 ); }
@@ -94,30 +123,32 @@ class Core {
 		this.three.renderer.setClearColor(new THREE.Color(0xFFFFFF), 1.0);
 
 		this.camera = this.mathbox.camera( { proxy: true, position: [2, 1, 2] } );
-    	
+		
 		this.view = this.mathbox.cartesian({
 			range: [[-3, 3], [-2, 2], [-3, 3]],
 			scale: [2,1,2],
 		});
+		
 		var view = this.view;
+
 		var xAxis = view.axis( {axis: 1, width: 8, detail: 40, color:"red"} );
 		var xScale = view.scale( {axis: 1, divide: 10, nice:true, zero:true} );
 		var xTicks = view.ticks( {width: 5, size: 15, color: "red", zBias:2} );
-		var xFormat = view.format( {digits: 2, font:"Arial", weight: "bold", style: "normal", source: xScale} );
+		var xFormat = view.format( {digits: 2, font:"Arial", weight: "normal", style: "normal", source: xScale} );
 		var xTicksLabel = view.label( {color: "red", zIndex: 0, offset:[0,-20], points: xScale, text: xFormat} );
-		
+
 		var yAxis = view.axis( {axis: 3, width: 8, detail: 40, color:"green"} );
 		var yScale = view.scale( {axis: 3, divide: 5, nice:true, zero:false} );
 		var yTicks = view.ticks( {width: 5, size: 15, color: "green", zBias:2} );
-		var yFormat = view.format( {digits: 2, font:"Arial", weight: "bold", style: "normal", source: yScale} );
+		var yFormat = view.format( {digits: 2, font:"Arial", weight: "normal", style: "normal", source: yScale} );
 		var yTicksLabel = view.label( {color: "green", zIndex: 0, offset:[0,0], points: yScale, text: yFormat} );
 		
 		var zAxis = view.axis( {axis: 2, width: 8, detail: 40, color:"blue"} );
 		var zScale = view.scale( {axis: 2, divide: 5, nice:true, zero:false} );
 		var zTicks = view.ticks( {width: 5, size: 15, color: "blue", zBias:2} );
-		var zFormat = view.format( {digits: 2, font:"Arial", weight: "bold", style: "normal", source: zScale} );
+		var zFormat = view.format( {digits: 2, font:"Arial", weight: "normal", style: "normal", source: zScale} );
 		var zTicksLabel = view.label( {color: "blue", zIndex: 0, offset:[0,0], points: zScale, text: zFormat} );
-
+		
 		this.view.grid( {axes:[1,3], width: 2, divideX: 20, divideY: 20, opacity:0.25} );
 
 		this.domain = this.mathbox.cartesian({
@@ -237,10 +268,10 @@ var cGUI = f0.add( this, 'c' ).min(0).max(5).step(0.01).name('c = ');
 f0.close();
 
 var f2 = Ui.addFolder('Ограничения (u,v)');
-var uMinGUI = f2.add( this, 'uMin' ).step(0.01).onChange( graph1.update );
-var uMaxGUI = f2.add( this, 'uMax' ).step(0.01).onChange( graph1.update );
-var vMinGUI = f2.add( this, 'vMin' ).step(0.01).onChange( graph1.update );
-var vMaxGUI = f2.add( this, 'vMax' ).step(0.01).onChange( graph1.update );
+var uMinGUI = f2.add( this, 'uMin' ).min(0).max(30).step(0.01).onChange( graph1.update );
+var uMaxGUI = f2.add( this, 'uMax' ).min(0).max(30).step(0.01).onChange( graph1.update );
+var vMinGUI = f2.add( this, 'vMin' ).min(0).max(30).step(0.01).onChange( graph1.update );
+var vMaxGUI = f2.add( this, 'vMax' ).min(0).max(30).step(0.01).onChange( graph1.update );
 f2.close();
 
 var f3 = Ui.addFolder('Построение секущей');
@@ -281,7 +312,7 @@ var sphere = precetCreator("sin(u) * cos(v)", "sin(u) * sin(v)", "cos(u)", 0, 3.
 graphs.add( this, "sphere" ).name("Сфера");
 
 var torus = precetCreator("cos(u)*(a + b*cos(v))", "sin(u)*(a + b*cos(v))", "b*sin(v)", 0, 6.282, 0, 6.282, 1, 0.5)
-graphs.add( this, "torus" ).name("Торус");
+graphs.add( this, "torus" ).name("Тор");
 
 var helical = precetCreator("u * cos(v)", "u * sin(v)", "0.5 * v", -2, 2, -3.14, 3.14)
 graphs.add( this, "helical" ).name("Спираль");
@@ -299,11 +330,11 @@ var yMinGUI = f1.add( this, 'yMin' ).name("zMin").onChange( graph1.update );
 var yMaxGUI = f1.add( this, 'yMax' ).name("zMax").onChange( graph1.update );
 f1.close();
 
+Ui.add( app, "isAxisDisabled" ).name("Скрыть оси").onChange( app.toggleAxis.bind(app) );
 
 var graphColorStyle = "Синий";
 var graphColorStyleList = ["Синий", "Красный верх, зеленый низ", "Радужный"];
 var graphColorGUI = Ui.add( this, "graphColorStyle", graphColorStyleList ).name('Цвет графиков').onChange( graph1.update );
-
 
 window.update = graph1.update;
 Ui.add( app, 'savePNG' ).name("Сохранить в PNG");
